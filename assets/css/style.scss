@@ -46,6 +46,13 @@ body, p, a, li {
   font-weight: 300 !important;
 }
 
+a.buttons {
+  font-family: 'Spectral SC', serif !important;
+  font-weight: 400 !important;
+  font-size: 11px !important;
+  letter-spacing: 0.02em !important;
+}
+
 section h3 {
   margin-top: 0;
   margin-bottom: 10px;
@@ -64,12 +71,6 @@ section li strong {
   font-family: 'Spectral SC', serif !important;
   font-weight: 400 !important;
   letter-spacing: 0.02em !important;
-}
-.btn {
-  font-family: 'Spectral SC', serif !important;
-  font-weight: 400 !important;
-  font-size: 12px !important;
-  letter-spacing: 0.03em !important;
 }
 
 section h3:last-of-type {
