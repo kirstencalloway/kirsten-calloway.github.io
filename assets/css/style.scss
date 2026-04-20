@@ -1,22 +1,22 @@
 ---
 ---
 
-@import url('https://fonts.googleapis.com/css2?family=Bricolage Grotesque:wght@400;700&family=Inter:wght@300;400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montagu Slab:wght@400;700&family=Figtree:wght@300;400;500;700&display=swap');
 
 @import "{{ site.theme }}";
 
 h1.header, h1.header a {
-  font-family: 'Bricolage Grotesque', serif !important;
+  font-family: 'Montagu Slab', serif !important;
   font-weight: 700 !important;
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: 'Bricolage Grotesque', serif !important;
+  font-family: 'Montagu Slab', serif !important;
   font-weight: 700 !important;
 }
 
 body, p, a, li, p.header, header p, header a {
-  font-family: 'Inter', sans-serif !important;
+  font-family: 'Figtree', sans-serif !important;
 }
 
 hr {
