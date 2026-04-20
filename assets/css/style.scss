@@ -1,10 +1,14 @@
 ---
 ---
 
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Quicksand:wght@300;400;500;700&display=swap');
 
 @import "{{ site.theme }}";
 
-body, h1, h2, h3, h4, h5, h6, p, a, li {
+body, p, a, li, header, header p, header a {
+  font-family: 'Quicksand', sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6, header h1, header h2 {
   font-family: 'Playfair Display', serif;
 }
