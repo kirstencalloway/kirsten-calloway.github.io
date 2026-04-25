@@ -7,6 +7,7 @@ My work sits at the intersection of positive psychology, data science, and digit
 ### Contact Me
 * **Email:** [kirsten.l.calloway@gmail.com](mailto:kirsten.l.calloway@gmail.com)
 * **LinkedIn:** [linkedin.com/in/kirsten-calloway](https://www.linkedin.com/in/kirsten-calloway)
+
 ---
 ### [View My Resume / CV](resume)
 ---
