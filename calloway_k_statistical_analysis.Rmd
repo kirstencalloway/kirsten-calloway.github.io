@@ -1,0 +1,544 @@
+---
+title: "Statistical Analysis & Data Preparation"
+author: "Kirsten L. Calloway"
+subtitle: "Character Strength Constellations Across Racial Groups"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+    theme: flatly
+  pdf_document:
+    toc: true
+    toc_depth: '3'
+always_allow_html: true
+geometry: margin=1.0in
+editor_options:
+  markdown:
+    wrap: sentence
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  warning = FALSE,
+  message = FALSE,
+  tidy = TRUE,
+  tidy.opts = list(width.cutoff = 55)
+)
+options(width = 70)
+```
+
+# Overview
+
+This analysis serves as the statistical foundation for my capstone project, "Where Does Hope Live?" I examine character strength patterns across three racial groups using VIA Institute data (n = 7,047), grounded in Dr. Joseph L. White's (1984) documentation of psychological strengths in Black communities and Dr. Jacqueline Mattis's scholarship on generational hope (Hellman & Mattis, 2023). Following QuantCrit principles (Gillborn et al., 2018), I treat observed patterns as reflections of adaptive responses to racialized experiences rather than inherent group characteristics.
+
+# Libraries
+
+```{r}
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(readxl)
+library(corrplot)
+library(car)
+```
+
+# Data Loading and Preparation
+
+## Dataset Evolution
+
+This analysis uses data from two sources:
+
+1. **2023 Empirical Study:** My Master's capstone research examining character strengths, resilience, and multiracial identity. IRB exemption was obtained, and the VIA Institute granted permission for data use.
+
+2. **VIA Institute Retrospective Data:** Additional data provided by the VIA Institute to achieve adequate sample sizes for historically underrepresented populations.
+
+Participants completed an online survey including the VIA Inventory of Strengths (240 items measuring 24 character strengths) and the Brief Resilience Scale (6 items). Character strength scores represent composite means on a 1-5 scale, calculated by the VIA Institute.
+
+The Monoracial sample (Monoracial Black and Monoracial White participants) was collected over a brief period in August 2023 (August 6-9, 2023). The Black-White Biracial sample was collected retrospectively over 48 months (June 2019 through August 2023) to achieve adequate statistical power for this historically underrepresented population. Retrospective data collection for smaller populations is a standard and accepted methodological approach when real-time sampling would yield insufficient sample sizes. The VIA Institute granted permission for use of this data for research purposes.
+
+The original study included only 24 Black-White Biracial participants out of 1,227 total, which was insufficient for robust statistical comparisons. On the advice of my capstone advisor, I stacked the original study data with the retrospective data to ensure credibility and consistency, merging three separate spreadsheets: (1) the original empirical study data, (2) additional Monoracial data, and (3) the retrospective Black-White Biracial data. The combined dataset includes n = 7,047 participants, providing substantially greater statistical power than the original study, particularly for the Black-White Biracial group (n = 3,738 compared to the original n = 24).
+
+```{r}
+# Load dataset
+data202_lab3_data <- read_excel("C:/Users/kelal/OneDrive/R Studio/data202/data202_lab3_data.xlsx")
+stacked_data <- data202_lab3_data
+```
+
+## Create Analysis Variables
+
+```{r}
+# Convert Hope from character to numeric
+stacked_data$Hope <- as.numeric(stacked_data$Hope)
+
+# Create Race_Group and Geographic_Region
+stacked_data <- stacked_data %>%
+  mutate(
+    Race_Group = case_when(
+      Race == "2332" ~ "Monoracial White",
+      Race == "2333" ~ "Monoracial Black",
+      Race == "2332, 2333" ~ "Black-White Biracial",
+      TRUE ~ "Other"
+    ),
+    Geographic_Region = case_when(
+      `JC Y/N` == "Y" ~ "Jim Crow",
+      `JC Y/N` == "N" ~ "Non-Jim Crow",
+      TRUE ~ NA_character_
+    )
+  )
+```
+
+## Define and Convert All 24 Character Strengths
+
+```{r}
+# Define all 24 VIA character strengths
+strength_names <- c(
+  "Appreciation of Beauty & Excellence", "Bravery", "Love", "Prudence", "Teamwork",
+  "Creativity", "Curiosity", "Fairness", "Forgiveness", "Gratitude",
+  "Honesty", "Hope", "Humor", "Perseverance", "Judgment",
+  "Kindness", "Leadership", "Love of Learning", "Humility", "Perspective",
+  "Self-Regulation", "Social Intelligence", "Spirituality", "Zest"
+)
+
+# Convert all 24 strengths from character to numeric
+for(strength in strength_names) {
+  stacked_data[[strength]] <- as.numeric(stacked_data[[strength]])
+}
+```
+
+## Verify Dataset Structure
+
+Confirming the merged dataset dimensions and group distributions:
+
+```{r}
+dim(stacked_data)
+table(stacked_data$Race_Group)
+table(stacked_data$Geographic_Region)
+table(stacked_data$Race_Group, stacked_data$Geographic_Region)
+```
+
+## Data Integrity: Missing Values
+
+```{r}
+# Check for missing values across key variables
+cat("Missing Hope:", sum(is.na(stacked_data$Hope)), "\n")
+cat("Missing Race_Group:", sum(is.na(stacked_data$Race_Group)), "\n")
+cat("Missing Geographic_Region:", sum(is.na(stacked_data$Geographic_Region)), "\n")
+
+# Check missing values across all 24 strengths
+strength_missing <- sapply(stacked_data[strength_names], function(x) sum(is.na(x)))
+cat("\nMissing values across 24 character strengths:\n")
+print(strength_missing[strength_missing > 0])
+if(all(strength_missing == 0)) cat("No missing values in any character strength variable.\n")
+```
+
+The dataset contains no missing values for any analysis variable. Participants with missing or invalid data were excluded during the Excel data preparation phase.
+
+# Exploratory Data Analysis (EDA)
+
+## Descriptive Statistics: Central Tendency and Dispersion
+
+The rubric requires mean, median, SD, and IQR for key variables.
+
+```{r}
+# Hope descriptive statistics: overall
+cat("=== HOPE: OVERALL ===\n")
+cat("Mean:", round(mean(stacked_data$Hope, na.rm = TRUE), 3), "\n")
+cat("Median:", round(median(stacked_data$Hope, na.rm = TRUE), 3), "\n")
+cat("SD:", round(sd(stacked_data$Hope, na.rm = TRUE), 3), "\n")
+cat("IQR:", round(IQR(stacked_data$Hope, na.rm = TRUE), 3), "\n")
+cat("Min:", min(stacked_data$Hope, na.rm = TRUE), 
+    "Max:", max(stacked_data$Hope, na.rm = TRUE), "\n")
+```
+
+```{r}
+# Hope by Race_Group: mean, median, SD, IQR
+stacked_data %>%
+  group_by(Race_Group) %>%
+  summarize(
+    n = n(),
+    Mean = round(mean(Hope, na.rm = TRUE), 3),
+    Median = round(median(Hope, na.rm = TRUE), 3),
+    SD = round(sd(Hope, na.rm = TRUE), 3),
+    IQR = round(IQR(Hope, na.rm = TRUE), 3),
+    .groups = "drop"
+  )
+```
+
+```{r}
+# Descriptive statistics for all 24 strengths (overall)
+strength_descriptives <- stacked_data %>%
+  select(all_of(strength_names)) %>%
+  pivot_longer(everything(), names_to = "Strength", values_to = "Score") %>%
+  group_by(Strength) %>%
+  summarize(
+    Mean = round(mean(Score, na.rm = TRUE), 3),
+    Median = round(median(Score, na.rm = TRUE), 3),
+    SD = round(sd(Score, na.rm = TRUE), 3),
+    IQR = round(IQR(Score, na.rm = TRUE), 3),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(Mean))
+
+print(strength_descriptives)
+```
+
+## Visual Distributions
+
+### Histogram: Hope Score Distribution
+
+```{r, fig.width=8, fig.height=5}
+ggplot(stacked_data, aes(x = Hope)) +
+  geom_histogram(binwidth = 0.25, fill = "#C9963A", color = "white", alpha = 0.8) +
+  labs(title = "Distribution of Hope Scores (N = 7,047)",
+       x = "Hope Score (1-5 scale)", y = "Frequency") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"))
+```
+
+### Boxplot: Hope by Racial Group
+
+This visualization reveals that Monoracial Black participants demonstrate higher Hope scores with a higher median and tighter distribution compared to the other two groups.
+
+```{r, fig.width=8, fig.height=5}
+race_colors <- c("Monoracial Black" = "#C9963A",
+                 "Black-White Biracial" = "#8A8276",
+                 "Monoracial White" = "#D8D2C4")
+
+ggplot(stacked_data, aes(x = Race_Group, y = Hope, fill = Race_Group)) +
+  geom_boxplot(alpha = 0.8, outlier.alpha = 0.3) +
+  scale_fill_manual(values = race_colors) +
+  labs(title = "Hope Scores by Racial Group",
+       x = "", y = "Hope Score (1-5 scale)") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"),
+        legend.position = "none")
+```
+
+### Density Plot: Hope Distribution by Racial Group
+
+```{r, fig.width=8, fig.height=5}
+ggplot(stacked_data, aes(x = Hope, fill = Race_Group, color = Race_Group)) +
+  geom_density(alpha = 0.3) +
+  scale_fill_manual(values = race_colors) +
+  scale_color_manual(values = race_colors) +
+  labs(title = "Hope Score Density by Racial Group",
+       x = "Hope Score (1-5 scale)", y = "Density",
+       fill = "Race Group", color = "Race Group") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"),
+        legend.position = "bottom")
+```
+
+## Correlation Analysis
+
+### Correlation: Hope, Zest, and Bravery with Resilience
+
+Based on Martinez-Marti and Ruch (2017), I examine whether Hope, Zest, and Bravery are associated with resilience (R1) in this racially diverse sample.
+
+```{r}
+# Ensure R1 is numeric
+stacked_data$R1 <- as.numeric(stacked_data$R1)
+
+# Correlations with resilience
+cor_hope <- cor.test(stacked_data$Hope, stacked_data$R1, use = "complete.obs")
+cor_zest <- cor.test(stacked_data$Zest, stacked_data$R1, use = "complete.obs")
+cor_bravery <- cor.test(stacked_data$Bravery, stacked_data$R1, use = "complete.obs")
+
+cat("Hope-Resilience: r =", round(cor_hope$estimate, 3), 
+    "p =", format.pval(cor_hope$p.value, digits = 3), "\n")
+cat("Zest-Resilience: r =", round(cor_zest$estimate, 3), 
+    "p =", format.pval(cor_zest$p.value, digits = 3), "\n")
+cat("Bravery-Resilience: r =", round(cor_bravery$estimate, 3), 
+    "p =", format.pval(cor_bravery$p.value, digits = 3), "\n")
+```
+
+### Correlation Matrix: 24 Character Strengths
+
+```{r, fig.width=10, fig.height=10}
+# Compute correlation matrix for all 24 strengths
+strength_cor <- cor(stacked_data[strength_names], use = "complete.obs")
+
+# Visualize
+corrplot(strength_cor, method = "color", type = "upper",
+         tl.cex = 0.6, tl.col = "black",
+         title = "Correlation Matrix: 24 VIA Character Strengths",
+         mar = c(0, 0, 2, 0))
+```
+
+This matrix reveals the inter-relationships among the 24 character strengths and is relevant for the multicollinearity diagnosis below.
+
+# Hypothesis Testing
+
+## Formal Hypotheses
+
+**Research Question:** Does Hope differ by racial identity and geographic context?
+
+**Hypothesis 1 (Race):**
+
+- H0: There is no significant difference in mean Hope scores across Monoracial Black, Monoracial White, and Black-White Biracial groups.
+- H1: At least one racial group differs significantly in mean Hope scores.
+
+**Hypothesis 2 (Geography):**
+
+- H0: There is no significant difference in mean Hope scores between Jim Crow and Non-Jim Crow states.
+- H1: Mean Hope scores differ significantly between Jim Crow and Non-Jim Crow states.
+
+**Hypothesis 3 (Interaction):**
+
+- H0: The effect of geographic region on Hope does not differ by racial group.
+- H1: The effect of geographic region on Hope depends on racial group.
+
+## Two-Way ANOVA
+
+I selected a two-way ANOVA because the research question involves one continuous dependent variable (Hope) and two categorical independent variables (Race_Group, Geographic_Region), and I am testing both main effects and their interaction.
+
+```{r}
+model <- aov(Hope ~ Race_Group * Geographic_Region, data = stacked_data)
+summary(model)
+```
+
+## Interpretation
+
+The two-way ANOVA reveals:
+
+- **Race_Group:** F = 45.43, p < .001. I reject H0. Hope scores differ significantly across racial groups. Monoracial Black participants demonstrate the highest mean Hope (M = 4.10), followed by Black-White Biracial (M = 3.79) and Monoracial White (M = 3.76).
+- **Geographic_Region:** F = 5.52, p = .019. I reject H0. A small but statistically significant difference exists, with Jim Crow states showing slightly higher Hope (M = 3.84 vs. 3.78).
+- **Interaction:** F = 0.44, p = .642. I fail to reject H0. The geographic pattern does not differ by racial group. All three groups show the same slight elevation in Jim Crow states.
+
+The p-value for Race_Group (p < .001) indicates that the probability of observing differences this large by chance alone is less than 0.1%. In context, this means that racial identity is associated with meaningfully different levels of Hope, with Monoracial Black participants scoring highest regardless of geographic location.
+
+```{r}
+# 6-cell descriptive comparison
+stacked_data %>%
+  group_by(Race_Group, Geographic_Region) %>%
+  summarize(
+    n = n(),
+    Mean_Hope = round(mean(Hope, na.rm = TRUE), 3),
+    SD_Hope = round(sd(Hope, na.rm = TRUE), 3),
+    .groups = "drop"
+  )
+```
+
+## Visualization: Hope by Race and Geography
+
+```{r, fig.width=8, fig.height=5}
+plot_data <- stacked_data %>%
+  group_by(Race_Group, Geographic_Region) %>%
+  summarize(
+    Mean_Hope = mean(Hope, na.rm = TRUE),
+    SE = sd(Hope, na.rm = TRUE) / sqrt(n()),
+    .groups = "drop"
+  )
+
+ggplot(plot_data, aes(x = Geographic_Region, y = Mean_Hope, 
+                      color = Race_Group, group = Race_Group)) +
+  geom_point(size = 4) +
+  geom_line(linewidth = 1.2) +
+  geom_errorbar(aes(ymin = Mean_Hope - SE, ymax = Mean_Hope + SE), 
+                width = 0.1, linewidth = 1) +
+  scale_color_manual(values = c("Monoracial Black" = "#C9963A",
+                                "Black-White Biracial" = "#8A8276",
+                                "Monoracial White" = "#D8D2C4")) +
+  labs(title = "Hope Scores by Race and Geographic Region",
+       x = "Geographic Region", y = "Mean Hope Score (1-5 scale)",
+       color = "Race Group") +
+  ylim(3.5, 4.2) +
+  theme_minimal() +
+  theme(text = element_text(size = 12),
+        plot.title = element_text(hjust = 0.5, face = "bold"),
+        legend.position = "bottom")
+```
+
+# Character Strength Constellation Analysis
+
+## Rankings by Racial Group
+
+```{r}
+# Calculate means and rank within each group
+strength_by_race <- stacked_data %>%
+  select(Race_Group, all_of(strength_names)) %>%
+  pivot_longer(cols = all_of(strength_names), 
+               names_to = "Strength", values_to = "Score") %>%
+  group_by(Race_Group, Strength) %>%
+  summarize(n = sum(!is.na(Score)),
+            Mean = mean(Score, na.rm = TRUE),
+            SD = sd(Score, na.rm = TRUE),
+            .groups = "drop")
+
+strength_rankings <- strength_by_race %>%
+  group_by(Race_Group) %>%
+  mutate(Rank = rank(-Mean, ties.method = "min")) %>%
+  arrange(Race_Group, Rank)
+```
+
+```{r}
+# Top 10 for each group
+cat("=== MONORACIAL BLACK TOP 10 ===\n")
+strength_rankings %>%
+  filter(Race_Group == "Monoracial Black", Rank <= 10) %>%
+  select(Rank, Strength, Mean) %>%
+  print()
+
+cat("\n=== BLACK-WHITE BIRACIAL TOP 10 ===\n")
+strength_rankings %>%
+  filter(Race_Group == "Black-White Biracial", Rank <= 10) %>%
+  select(Rank, Strength, Mean) %>%
+  print()
+
+cat("\n=== MONORACIAL WHITE TOP 10 ===\n")
+strength_rankings %>%
+  filter(Race_Group == "Monoracial White", Rank <= 10) %>%
+  select(Rank, Strength, Mean) %>%
+  print()
+```
+
+Three strengths appear in the Monoracial Black top 10 that are entirely absent from both other groups: Gratitude (rank 4), Spirituality (rank 5), and Hope (rank 6). This pattern is consistent with Dr. White's (1984) identification of spirituality as a key psychological strength in Black communities.
+
+# Pre-ML Data Diagnosis and Remediation
+
+This section prepares the dataset for future machine learning classification by diagnosing and addressing data quality issues that would compromise model performance.
+
+## Multicollinearity Check
+
+Because the 24 character strengths are psychological constructs measured by the same instrument, some degree of correlation is expected. High multicollinearity among features would inflate variance in model coefficients and reduce interpretability.
+
+```{r}
+# Check for highly correlated strength pairs (r > 0.70)
+high_cor <- which(abs(strength_cor) > 0.70 & strength_cor < 1, arr.ind = TRUE)
+if(nrow(high_cor) > 0) {
+  cat("Strength pairs with r > 0.70:\n")
+  for(i in 1:nrow(high_cor)) {
+    row_name <- rownames(strength_cor)[high_cor[i, 1]]
+    col_name <- colnames(strength_cor)[high_cor[i, 2]]
+    r_val <- round(strength_cor[high_cor[i, 1], high_cor[i, 2]], 3)
+    if(high_cor[i, 1] < high_cor[i, 2]) {
+      cat(" ", row_name, "&", col_name, ": r =", r_val, "\n")
+    }
+  }
+} else {
+  cat("No strength pairs exceed r = 0.70. Multicollinearity is not severe.\n")
+}
+```
+
+```{r}
+# VIF using Hope as dependent variable with all other strengths as predictors
+# This tests whether any predictor is redundant given the others
+vif_model <- lm(Hope ~ `Appreciation of Beauty & Excellence` + Bravery + Love + 
+                  Prudence + Teamwork + Creativity + Curiosity + Fairness + 
+                  Forgiveness + Gratitude + Honesty + Humor + Perseverance + 
+                  Judgment + Kindness + Leadership + `Love of Learning` + 
+                  Humility + Perspective + `Self-Regulation` + 
+                  `Social Intelligence` + Spirituality + Zest, 
+                data = stacked_data)
+
+vif_values <- vif(vif_model)
+cat("\n=== Variance Inflation Factors ===\n")
+print(round(vif_values, 2))
+
+cat("\nVIF > 5 (potential concern):", sum(vif_values > 5), "variables\n")
+cat("VIF > 10 (serious multicollinearity):", sum(vif_values > 10), "variables\n")
+```
+
+**Remediation strategy:** If any VIF exceeds 10, I would consider dropping the redundant feature or using PCA to reduce dimensionality. If VIF values are moderate (5-10), I would note this as a consideration for model selection, favoring regularized methods (ridge or lasso regression) that handle correlated predictors more robustly than standard logistic regression.
+
+## Class Imbalance
+
+The sample composition reflects the intentional design of this research, which centers Black-White Biracial individuals to examine character strength patterns in a population historically underrepresented in positive psychology. The Monoracial Black and Monoracial White groups are included because a Black-White biracial individual has a Black parent, and centering both voices is essential. The discovery that Monoracial Black participants scored highest on Hope connected this work to Dr. Mattis's scholarship on generational hope and Dr. White's documentation of psychological strengths in Black communities, reinforcing the need for inclusive approaches that see both parent and child.
+
+The original study included only 24 Black-White Biracial participants, which was insufficient for meaningful analysis. The retrospective data collection addressed this limitation, bringing the Black-White Biracial sample to n = 3,738. For a future classification task predicting group membership from strength profiles, a model trained on this distribution would need to account for the unequal class sizes:
+
+```{r}
+# Document class distribution
+class_dist <- table(stacked_data$Race_Group)
+class_pct <- round(prop.table(class_dist) * 100, 1)
+
+cat("=== Class Distribution ===\n")
+for(i in 1:length(class_dist)) {
+  cat(names(class_dist)[i], ":", class_dist[i], 
+      paste0("(", class_pct[i], "%)"), "\n")
+}
+
+cat("\nImbalance ratio (largest / smallest):", 
+    round(max(class_dist) / min(class_dist), 1), ": 1\n")
+```
+
+The Monoracial Black group (n = 441, 6.3%) is substantially smaller than both Black-White Biracial (n = 3,738, 53.0%) and Monoracial White (n = 2,868, 40.7%). The imbalance ratio of approximately 8.5:1 between the largest and smallest classes is significant enough to cause a classifier to favor the majority class.
+
+**Remediation: SMOTE Implementation**
+
+I apply SMOTE (Synthetic Minority Oversampling Technique) to generate synthetic samples for the underrepresented classes, preparing a balanced dataset for future ML classification. Evaluation should prioritize F1-score and per-class recall over overall accuracy, since a model that simply predicts the majority class would achieve 53% accuracy while missing the Monoracial Black group entirely. Stratified cross-validation should be used to ensure each fold preserves the class distribution.
+
+```{r}
+# install.packages("smotefamily")
+library(smotefamily)
+
+# Prepare numeric feature matrix (24 character strengths) and target
+ml_data <- stacked_data %>%
+  select(Race_Group, all_of(strength_names)) %>%
+  filter(complete.cases(.))
+
+# Encode Race_Group as numeric for SMOTE
+ml_data$target <- as.numeric(as.factor(ml_data$Race_Group))
+
+# Separate features and target
+features <- ml_data %>% select(all_of(strength_names))
+target <- ml_data$target
+
+# Apply SMOTE to balance the classes
+smote_result <- SMOTE(features, target, K = 5, dup_size = 0)
+smote_data <- smote_result$data
+
+# Rename the synthetic target column
+names(smote_data)[ncol(smote_data)] <- "target"
+
+# Document the balanced class distribution
+cat("=== Pre-SMOTE Distribution ===\n")
+print(table(ml_data$Race_Group))
+
+cat("\n=== Post-SMOTE Distribution ===\n")
+print(table(smote_data$target))
+
+cat("\nSMOTE successfully generated synthetic samples to balance class distribution.\n")
+cat("Original dataset:", nrow(ml_data), "rows\n")
+cat("Balanced dataset:", nrow(smote_data), "rows\n")
+```
+
+## Outlier Assessment
+
+```{r}
+# Check for outliers in Hope using IQR method
+Q1 <- quantile(stacked_data$Hope, 0.25, na.rm = TRUE)
+Q3 <- quantile(stacked_data$Hope, 0.75, na.rm = TRUE)
+IQR_val <- Q3 - Q1
+lower_bound <- Q1 - 1.5 * IQR_val
+upper_bound <- Q3 + 1.5 * IQR_val
+
+n_outliers <- sum(stacked_data$Hope < lower_bound | stacked_data$Hope > upper_bound, na.rm = TRUE)
+cat("Hope outliers (IQR method):", n_outliers, "out of", nrow(stacked_data), "\n")
+cat("Bounds: [", lower_bound, ",", upper_bound, "]\n")
+```
+
+**Strategy:** Given that Hope scores are bounded (1-5 scale) and the VIA instrument is well-validated, extreme scores likely reflect genuine variation rather than data entry errors. I retain all observations.
+
+# Summary
+
+This analysis established that Hope demonstrates the strongest association with resilience (r = .459), that Monoracial Black participants report significantly higher Hope regardless of geography, and that disaggregating data reveals distinct character strength constellations across racial groups. The Pre-ML diagnosis identified class imbalance as the primary concern for future modeling, with SMOTE and stratified evaluation as the recommended remediation approach. Multicollinearity among the 24 character strengths was assessed through both correlation thresholds and VIF analysis.
+
+# References
+
+Cohen, J. (1988). *Statistical power analysis for the behavioral sciences* (2nd ed.). Lawrence Erlbaum Associates.
+
+Gillborn, D., Warmington, P., & Demack, S. (2018). QuantCrit: Education, policy, 'Big Data' and principles for a critical race theory of statistics. *Race Ethnicity and Education, 21*(2), 158-179.
+
+Hellman, C., & Mattis, J. S. (Hosts). (2023, December). Why we need hope (No. 265) [Audio podcast episode]. In *Speaking of Psychology*. American Psychological Association.
+
+Martínez-Martí, M. L., & Ruch, W. (2017). Character strengths predict resilience over and above positive affect, self-efficacy, optimism, social support, self-esteem, and life satisfaction. *The Journal of Positive Psychology, 12*(2), 110-119.
+
+White, J. L. (1984). *The psychology of Blacks: An Afro-American perspective.* Englewood Cliffs, NJ: Prentice Hall.
+
+# Acknowledgement of AI Assistance
+
+I used Claude (Anthropic) as a collaborative tool for this analysis. Claude assisted with: organizing my theoretical frameworks into structured sections, refining academic language, troubleshooting code errors, and restructuring the analysis for the GitHub portfolio rubric. All research questions, theoretical grounding (Dr. White's framework, Dr. Mattis's scholarship, QuantCrit principles), data analysis decisions, interpretations, and conclusions are my own original work based on my previous master's research and this semester's learning.
