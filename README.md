@@ -9,3 +9,18 @@ My work sits at the intersection of positive psychology, data science, and digit
 * **LinkedIn:** [linkedin.com/in/kirsten-calloway](https://www.linkedin.com/in/kirsten-calloway)
 ---
 ### [📄 View My Resume / CV](resume)
+---
+
+## 📂 Capstone Portfolio
+
+### [Statistical Analysis](calloway_k_DATA802_Statistics.Rmd)
+Descriptive and inferential analysis of character strength patterns across three racial groups using VIA Institute data (n = 7,047). Includes EDA, two-way ANOVA, correlation analysis, constellation analysis, and SMOTE implementation for class imbalance.
+
+### [Machine Learning & Predictive Modeling](calloway_k_DATA801_Capstone__1_.ipynb)
+Multiclass classification predicting racial group membership from 24 character strength features. Compares Logistic Regression and Random Forest with class weighting, stratified cross-validation, and feature importance analysis.
+
+### [Computational Social Justice](social_justice.md)
+Narrative essay connecting statistical and machine learning findings to the systemic erasure of multiracial identity across psychological assessment, clinical algorithms, and AI systems.
+
+### Data Storytelling
+*Coming soon — Flourish interactive storyboard will be embedded here.*
