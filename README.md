@@ -5,6 +5,7 @@ My work sits at the intersection of positive psychology, data science, and digit
 * **Email:** [kirsten.l.calloway@gmail.com](mailto:kirsten.l.calloway@gmail.com)
 * **LinkedIn:** [linkedin.com/in/kirsten-calloway](https://www.linkedin.com/in/kirsten-calloway)
 * **Resume:** [View My Resume / CV](resume)
+
 ## Capstone Portfolio
 ### [Statistical Analysis](calloway_k_statistical_analysis.html)
 Descriptive and inferential analysis of character strength patterns across three racial groups using VIA Institute data (n = 7,047). Includes EDA, two-way ANOVA, correlation analysis, constellation analysis, and SMOTE implementation for class imbalance.
