@@ -12,4 +12,4 @@ The most consequential finding: Spirituality, Gratitude, and Hope appear togethe
 
 
 
-<div style="font-size: 0.85em; margin-top: 10px;">Built with <a href="https://flourish.studio" target="_blank">Flourish</a>. Data source: VIA Institute on Character.</div>
+<div style="font-size: 0.85em; margin-top: 10px;">Built with <a href="https:/flourish.studio" target="_blank">Flourish</a>. Data source: VIA Institute on Character.</div>
