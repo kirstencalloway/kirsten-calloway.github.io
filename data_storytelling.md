@@ -6,7 +6,7 @@ Using correlation analysis, two-way ANOVA, and constellation ranking, the analys
 
 The most consequential finding: Spirituality, Gratitude, and Hope appear together in the Monoracial Black top 10 constellation but are entirely absent from both other groups — raising questions about how community-sustained psychological resources are transmitted across generations of multiracial identity.
 
-**How to interact:** Scroll through the story to follow the narrative arc. Hover over data points, map regions, and chart elements to see detailed tooltips with group-level statistics and sample sizes.
+**How to interact:** Click through the story to follow the narrative arc. Hover over data points, map regions, and chart elements to see detailed tooltips with group-level statistics and sample sizes.
 
 <iframe src='https://flo.uri.sh/story/3658753/embed' title='Interactive or visual content' class='flourish-embed-iframe' frameborder='0' scrolling='no' style='width:100%;height:600px;' sandbox='allow-same-origin allow-forms allow-scripts allow-downloads allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation'></iframe>
 
